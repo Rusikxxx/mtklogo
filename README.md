@@ -10,7 +10,7 @@
 chmod +x mtklogo-gui-1.1-x86_64.AppImage
 ./mtklogo-gui-1.1-x86_64.AppImage
 ```
-* On the first run it creates `~/mtklogo-gui/original/` and `~/mtklogo-gui/suggested/` (with a `logo.bin` of **example**). Everything the script generates 
+* On the first run it creates `~home/mtklogo-gui/original/` and `~home/mtklogo-gui/suggested/` (with a `logo.bin` of **example**). Everything the script generates 
 (`logo/`, `out/`, `backup/`) is in these folders. Use **Choose logo.bin…** to bring yours.
 * No FUSE (`libfuse2`)? `./mtklogo-gui-1.1-x86_64.AppImage --appimage-extract-and-run`
 * Requires glibc ≥ 2.34 (Ubuntu 22.04+, Debian 12+, Fedora 35+, Arch…) because of the `mtklogo` binary. Qt/xcb are built-in.
