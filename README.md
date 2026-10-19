@@ -1,8 +1,7 @@
 # mtklogo GUI (v1.1)
 
 - **New in 1.1:** Ready AppImage (`mtklogo-gui-1.1-x86_64.AppImage`), **set selector**
-- Comparring (Original × Suggested), with button **Choose logo.bin…**, folder `suggested/` (script v2 + patched mtklogo + new yaml)
-- and correction in prompt detection (ignores `read` from script internal pipes).
+- Comparring (Original × Suggested), with button **Choose logo.bin…**, folder `suggested/` (script v2 + patched mtklogo + new yaml) and correction in prompt detection (ignores `read` from script internal pipes).
 - Details and justifications in `ANALYSIS_AND_SUGGESTIONS.md`.
 
 ## AppImage (simplest)
