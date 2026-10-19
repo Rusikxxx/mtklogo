@@ -1,17 +1,21 @@
-```Suggest improvements to the mtklogos.sh and mtklogo.yaml files. Also analyze improvements to the mtklogo file based on the source code and the possibility of including more resolutions.```
+```Suggest improvements to the mtklogos.sh and mtklogo.yaml files. Also analyze improvements to the mtklogo file based on the source code and the possibility of including more resolutions. At the end, give me an AppImage to run and test on my Linux computer.```
 
-At the end, give me an AppImage to run and test on my Linux computer.
 Planning the packaging into an AppImage with a writable workspace.
 I will start by reading the Rust source code of mtklogo to support the analysis, and then I will prepare the AppImage.
 Executed 8 commands
 
 I confirmed two real bugs in the script flow. I will now see which slots in the example logo.bin are missing a profile (the 11 failures in 720x1600) and check for resolution duplicates in the yaml.
+
 Executed one command
+
 Findings confirmed in practice. Before deciding how to deliver the suggestions for the binary, I will check if I can compile Rust here, to test the patches instead of just describing them.
 
 Executed 17 commands, read 2 files, created one file.
+
 The total is followed by a non-breaking space (U+00A0), which broke sed. I correct this and redo the complete test.
+
 Executed 26 commands, created one file, shared files.
+
 The AppImage is ready (48 MB, x86-64). To open: chmod +x mtklogo-gui-1.1-x86_64.AppImage && ./mtklogo-gui-1.1-x86_64.AppImage. If your Linux does not have FUSE (libfuse2), run it with --appimage-extract-and-run at the end.
 I tested the AppImage under a virtual X (Xvfb), but not in a real desktop session. Nothing that was generated was saved to a device.
 
