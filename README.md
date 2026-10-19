@@ -1,9 +1,9 @@
 # mtklogo GUI (v1.1)
 
-> **New in 1.1:** Ready AppImage (`mtklogo-gui-1.1-x86_64.AppImage`), **set selector**
-> Comparring (Original × Suggested), with button **Choose logo.bin…**, folder `suggested/` (script v2 + patched mtklogo + new yaml)
-> and correction in prompt detection (ignores `read` from script internal pipes).
-> Details and justifications in `ANALYSIS_AND_SUGGESTIONS.md`.
+- **New in 1.1:** Ready AppImage (`mtklogo-gui-1.1-x86_64.AppImage`), **set selector**
+- Comparring (Original × Suggested), with button **Choose logo.bin…**, folder `suggested/` (script v2 + patched mtklogo + new yaml)
+- and correction in prompt detection (ignores `read` from script internal pipes).
+- Details and justifications in `ANALYSIS_AND_SUGGESTIONS.md`.
 
 ## AppImage (simplest)
 
@@ -38,3 +38,6 @@ The script runs **exactly as is** (`bash ./mtklogos.sh`): the GUI only captures 
 | `suggested/` | `mtklogos.sh` v2, `mtklogo.yaml` with `exp_*` fixes/profiles, `mtklogo` patched |
 | `mtklogo-improvements.patch` | Rust source code patch (apply over `cyberknight777/mtklogo`) |
 | `ANALYSIS_AND_SUGGESTIONS.md` | Script, yaml and source code analysis |
+
+### Analysis and suggestions from claude.ai
+You can read [mtklogo_gui_Claude-AI_prompt.md](https://github.com/lopestom/mtklogo/blob/mtklogo_2026/mtklogo_gui_Claude-AI_prompt.md) and [ANALYSIS_AND_SUGGESTIONS.md](https://github.com/lopestom/mtklogo/blob/mtklogo_2026/ANALYSIS_AND_SUGGESTIONS.md) if you want.
