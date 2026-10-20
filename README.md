@@ -15,6 +15,18 @@ chmod +x mtklogo-gui-1.1-x86_64.AppImage
 * No FUSE (`libfuse2`)? `./mtklogo-gui-1.1-x86_64.AppImage --appimage-extract-and-run`
 * Requires glibc ≥ 2.34 (Ubuntu 22.04+, Debian 12+, Fedora 35+, Arch…) because of the `mtklogo` binary. Qt/xcb are built-in.
 
+> [!NOTE]  
+> A folder named `~home/mtklogo-gui` is created with two other subfolders `~home/mtklogo-gui/suggested` and `~home/mtklogo-gui/original`.
+> Set your selection to `original` or `suggested` so that each subfolder contains the png files from your logo.bin file, located in `~home/mtklogo-gui/suggested/logo` and `~home/mtklogo-gui/original/logo`.
+>
+> It is in this `/logo` subfolder that you should place your modified png images or modify the png images directly in this subfolder.
+>
+> <details><summary> Example - Click to open</summary>
+> <p>
+> <img width="982" height="375" alt="6" src="https://github.com/user-attachments/assets/98037276-cba4-435f-8a82-17fb62a6a423" />
+> </p>
+> </details>
+
 ## From sources
 
 `./run.sh` opens the original pool; **`./run.sh suggested`** opens the suggested set (`suggested/` folder).
