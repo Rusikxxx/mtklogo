@@ -25,11 +25,11 @@ The script runs **exactly as is** (`bash ./mtklogos.sh`): the GUI only captures 
 
 ## Content
 
-| Archive | Description |
+| File | Description |
 |---|---|
 | `mtklogo_gui.py` | The graphical interface (PySide6, with fallback to PyQt5) |
 | `run.sh` | Launcher: use the system Qt or create a `.venv` with PySide6 |
-| `requirements.txt` | Python Dependency (`PySide6-Essentials`) |
+| `requirements.txt` | Python dependency (`PySide6-Essentials`) |
 | `mtklogos.sh` | Original script (**unchanged**) |
 | `mtklogo` | Linux binary x86-64 v1.0.1 (identical to the latest upstream release) |
 | `mtklogo.yaml` | Fork profiles **+ 8 merged upstream profiles** (see below) |
