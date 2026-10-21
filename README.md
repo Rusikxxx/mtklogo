@@ -1,10 +1,10 @@
 # mtklogo GUI (v1.2)
 
-## **New in 1.2:
+## **New in 1.2**:
 - The GUI now follows your computer's system language, with English as the default. The new version is 1.2, in the file mtklogo-gui-1.2-x86_64.AppImage (50 MB).
 - Languages ​​included: `Brazilian Portuguese`, `English`, `German`, `Spanish`, and `French`. If you use another language, everything will be in English.
 
-## **New in 1.1:
+#### **New in 1.1**:
 - ** Ready AppImage (`mtklogo-gui-1.2-x86_64.AppImage`), **set selector**
 - Comparring (Original × Suggested), with button **Choose logo.bin…**, folder `suggested/` (script v2 + patched mtklogo + new yaml) and correction in prompt detection (ignores `read` from script internal pipes).
 - Details and justifications in `ANALYSIS_AND_SUGGESTIONS.md`.
@@ -40,7 +40,7 @@ Minimalist graphical interface (Python + Qt) for `mtklogos.sh`.
 
 The script runs **exactly as is** (`bash ./mtklogos.sh`): the GUI only captures the output in real time and respond to his questions through dialogue.
 
-### Detection
+### Language detection
 - The GUI reads `MTKLOGO_GUI_LANG`, `LANGUAGE`, `LC_ALL`, `LC_MESSAGES`, and `LANG`, in that order. To test another language without changing the system:
 ```bash
 MTKLOGO_GUI_LANG=de ./mtklogo-gui-1.2-x86_64.AppImage
@@ -67,16 +67,40 @@ MTKLOGO_GUI_LANG=de ./mtklogo-gui-1.2-x86_64.AppImage
 | `mtklogo-gui-1.2-fonts.zip` | All files from mtklogo_v1.1 (`./run.sh` included) |
 | `ANALYSIS_AND_SUGGESTIONS.md` | Script, yaml and source code analysis |
 
-mtklogo-gui-1.2-fonts.zip
-
 ## Illustrative images
-<details><summary> Screenshots - Click to open</summary>
+<details><summary> original - Click to open</summary>
 <p>
-<img width="1283" height="824" alt="1" src="https://github.com/user-attachments/assets/70c5ebdf-8124-4e5c-a0e7-bc82e1a4f0c0" />
-<img width="1283" height="816" alt="2" src="https://github.com/user-attachments/assets/f6ae8dee-be4f-49fb-9ea2-caf61e66b547" />
-<img width="1283" height="816" alt="3" src="https://github.com/user-attachments/assets/9ae7aea9-e1bc-4a88-8698-cbc865ef342f" />
-<img width="1284" height="816" alt="4" src="https://github.com/user-attachments/assets/6c158f3d-5623-4f22-b73d-fff05a0258fc" />
-<img width="1283" height="816" alt="5" src="https://github.com/user-attachments/assets/03eb7cfe-a87a-4b24-ab9a-a41cab91a2ae" />
+<img width="1292" height="876" alt="111" src="https://github.com/user-attachments/assets/2be0b0b0-4da0-4b0c-8bdb-b49dcaa743fd" />
+<img width="1416" height="952" alt="222" src="https://github.com/user-attachments/assets/f94dc55e-9498-4a68-91cd-f44579db1f37" />
+<img width="1416" height="864" alt="333" src="https://github.com/user-attachments/assets/0cb2a37c-3ecc-42aa-afff-cce3be427c88" />
+<img width="1416" height="864" alt="444" src="https://github.com/user-attachments/assets/19ea1ba6-f24d-4005-baf5-c217e711e216" />
+<img width="1416" height="864" alt="555" src="https://github.com/user-attachments/assets/732f9d0e-15b1-4306-a93d-73aec6c3310a" />
+<img width="1416" height="864" alt="666" src="https://github.com/user-attachments/assets/e7a50115-9b6e-4a69-8f0a-ba8d1e60e784" />
+<img width="1416" height="864" alt="777" src="https://github.com/user-attachments/assets/a52f1dba-4bb0-465c-a7ca-fae9825f2dcf" />
+<img width="1416" height="864" alt="888" src="https://github.com/user-attachments/assets/1837dc36-3533-4daa-9e08-6e3637292814" />
+</p>
+</details>
+
+<details><summary> suggested - Click to open</summary>
+<p>
+<img width="1416" height="864" alt="001" src="https://github.com/user-attachments/assets/64939ebd-1062-40d4-a8f6-084823a267a2" />
+<img width="1364" height="1019" alt="002" src="https://github.com/user-attachments/assets/122df669-e8e6-4869-bf3c-c721a689cb8e" />
+<img width="1364" height="873" alt="003" src="https://github.com/user-attachments/assets/6dabad69-0d8e-4e88-a042-0726f4b25c8f" />
+<img width="1364" height="873" alt="004" src="https://github.com/user-attachments/assets/21375713-ee92-4624-b081-06f9fa7f18c8" />
+<img width="1364" height="873" alt="005" src="https://github.com/user-attachments/assets/8cbfa5e4-6a13-49b5-91e7-0e342a0d57e5" />
+<img width="1364" height="873" alt="006" src="https://github.com/user-attachments/assets/4e3d86b8-09ad-40ab-baa2-f75300e64780" />
+<img width="1420" height="940" alt="007" src="https://github.com/user-attachments/assets/f4c3adf8-9133-4d65-952e-8df6e7de9dd5" />
+</p>
+</details>
+
+<details><summary> other languages - Click to open</summary>
+<p>
+<img width="1291" height="885" alt="de" src="https://github.com/user-attachments/assets/202959d8-71ae-491e-9286-8da56b3a0968" />
+<img width="1291" height="885" alt="de1" src="https://github.com/user-attachments/assets/5e4f4e94-ab69-4b3c-b855-67e3da35a7a5" />
+<img width="1291" height="885" alt="fr" src="https://github.com/user-attachments/assets/d1266d1d-2c2d-4d58-8c41-14f68ffc4ce7" />
+<img width="1291" height="885" alt="fr1" src="https://github.com/user-attachments/assets/e7713c19-bc81-4a00-b659-ddd97cb86815" />
+<img width="1291" height="885" alt="es" src="https://github.com/user-attachments/assets/2d572c8e-192e-471a-b3b6-fd6959961bde" />
+<img width="1291" height="885" alt="es1" src="https://github.com/user-attachments/assets/f2beb2f5-b41a-4f68-bc03-ac30097f9c04" />
 </p>
 </details>
 
