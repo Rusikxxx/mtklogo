@@ -1,27 +1,27 @@
 #!/usr/bin/env bash
-# mtklogos.sh (v2) - interactive front-end for mtklogo (MediaTek logo.bin)
+# shellcheck disable=SC2059   # messages (lang/*.sh) are printf formats on purpose
+# mtklogos.sh (v2.1) - interactive front-end for mtklogo (MediaTek logo.bin)
 #
 # Credits / base:
-#   cyberknight777/mtklogo (binary and source code) · arlept/mtklogo (original)
-#   Sakurajima07/4pda (original script) · lopestom (Linux fork)
+#   cyberknight777/mtklogo (binary and source) · arlept/mtklogo (original)
+#   Sakurajima07 / 4pda (original script) · lopestom (Linux fork)
 #
-# What changes in relation to v1 (see ANALYSIS_AND_SUGGESTIONS.md):
-#   * no recursion (v1 called ./mtklogos.sh inside select -> each turn
-#     stacked another process); now it's a simple loop;
-#   * profiles come from mtklogo.yaml (`mtklogo profiles`): new profile in yaml
-#     appears alone in the menu, without editing the script;
-#   * "Detect profile" tests all profiles in --no-out mode and shows which
-#     recognizes more slots;
-#   * separate folders: logo/ (unpack), explore/ (explore), out/ (results),
-#     backup/ (copy of the original logo.bin, made once and never overwritten);
-#   * no longer copies the binary into logo/ (this would break the repack);
-#   * the name of the generated file is the same as the message informs;
-#   * validates the entered width and asks for confirmation before deleting/overwriting;
-#   * with mtklogo patched, use --reference (checks dimensions and size).
+# What changed versus v1 (see ANALISE_E_SUGESTOES.md):
+#   * no recursion (v1 called ./mtklogos.sh from inside `select`);
+#   * profiles come from mtklogo.yaml (`mtklogo profiles`): a new profile shows up
+#     in the menu by itself, no script edit needed;
+#   * "Detect profile" tests every profile with --no-out and ranks them;
+#   * separate folders: logo/ (unpack), explore/, out/ (results), backup/ (original, once);
+#   * no more copying the binary into logo/ (that broke repack);
+#   * the output file name is the one the message reports;
+#   * validates the width, asks before deleting/overwriting;
+#   * with the patched mtklogo it uses --reference (checks dimensions and size).
+#   * v2.1: messages in lang/<code>.sh (en, pt, de, es, fr). The language follows
+#     MTKLOGO_GUI_LANG, LANGUAGE, LC_ALL, LC_MESSAGES, LANG (English if unknown).
 #
-# Usage: ./mtklogos.sh (LOGO_BIN=logo.bin ./mtklogos.sh for another file)
+# Usage:  ./mtklogos.sh            (LOGO_BIN=other.bin ./mtklogos.sh for another file)
 
-PS3='#? '                       # prompt from select (the GUI recognizes "#?")
+PS3='#? '                       # select prompt (the GUI recognises "#? ")
 cd "$(dirname "$(readlink -f "$0")")" || exit 1
 
 LOGO_BIN="${LOGO_BIN:-logo.bin}"
@@ -31,81 +31,107 @@ OUT_DIR="out"
 BACKUP_DIR="backup"
 STATE_FILE=".mtklogos_state"
 
+# ---- language ------------------------------------------------------------------
+LANG_DIRS=("$PWD/lang" "$PWD/../lang")
+
+find_lang_file() {   # find_lang_file <code> -> prints the path of <code>.sh
+    local d; for d in "${LANG_DIRS[@]}"; do [ -f "$d/$1.sh" ] && { echo "$d/$1.sh"; return 0; }; done; return 1
+}
+
+pick_lang() {        # first requested language that has a file; English otherwise
+    local v val c base IFS=:
+    for v in MTKLOGO_GUI_LANG LANGUAGE LC_ALL LC_MESSAGES LANG; do
+        val="${!v:-}"; [ -n "$val" ] || continue
+        for c in $val; do
+            base="${c%%[._@]*}"; base="${base%%-*}"; base="${base,,}"
+            case "$base" in c|posix|en|"") echo en; return;; esac
+            find_lang_file "$base" >/dev/null && { echo "$base"; return; }
+        done
+    done
+    echo en
+}
+
+# shellcheck disable=SC1090
+{ f=$(find_lang_file en) && . "$f"; }                          # defaults (English)
+# shellcheck disable=SC1090
+{ SCRIPT_LANG=$(pick_lang); [ "$SCRIPT_LANG" != en ] && f=$(find_lang_file "$SCRIPT_LANG") && . "$f"; }
+
 C1=$'\033[1;36m'; C2=$'\033[1;34m'; CW=$'\033[1;33m'; CE=$'\033[1;31m'; C0=$'\033[0m'
+fmt()    { local f="$1"; shift; printf "$f" "$@"; }
+say()    { fmt "$@"; echo; }
 banner() { echo -e "${C1} ************************************************* ${C0}"
            for l in "$@"; do echo -e "${C2}   $l ${C0}"; done
            echo -e "${C1} ************************************************* ${C0}"; }
-warn()   { echo -e "${CW}Aviso:${C0} $*"; }
-err()    { echo -e "${CE}Erro:${C0} $*"; }
+warn()   { echo -e "${CW}${P_WARN}${C0} $*"; }
+err()    { echo -e "${CE}${P_ERR}${C0} $*"; }
 
-# ---- locate mtklogo ---------------------------------------------------
+# ---- locate mtklogo ----------------------------------------------------------
 chmod u+x ./mtklogo 2>/dev/null
 if [ -x ./mtklogo ]; then MTKLOGO=./mtklogo
 elif command -v mtklogo >/dev/null 2>&1; then MTKLOGO=$(command -v mtklogo)
-else err "The binary mtklogo was not found in $PWD nor in the PATH."; exit 1; fi
-echo "Using: $MTKLOGO  (folder $PWD)"
+else err "$(fmt "$M_NO_BIN" "$PWD")"; exit 1; fi
+say "$M_USING" "$MTKLOGO" "$PWD"
 
 HAS_PROFILES=0; HAS_REFERENCE=0
 "$MTKLOGO" profiles >/dev/null 2>&1 && HAS_PROFILES=1
 "$MTKLOGO" repack --help 2>/dev/null | grep -q -- '--reference' && HAS_REFERENCE=1
 
-# ---- utilities ------------------------------------------------------------
+# ---- helpers -----------------------------------------------------------------
 strip_ansi() { sed -E 's/\x1b\[[0-9;]*[A-Za-z]//g'; }
 
-confirm() {   # Confirm "question" -> 0 if yes; default = no
-    local a; printf '%s [s/N] ' "$1"; read -r a || return 1
-    [[ "$a" =~ ^([sSyY]|sim|SIM|yes|YES)$ ]]
+confirm() {   # confirm "question" -> 0 if yes; default = no (y/s/j/o and the full words)
+    local a; printf '%s %s ' "$1" "$Y_HINT"; read -r a || return 1
+    case "${a,,}" in y|yes|s|sim|si|sí|j|ja|o|oui) return 0;; *) return 1;; esac
 }
 
-ask() {       # ask "question" -> reply in $REPLY
+ask() {       # ask "question" -> answer in $REPLY
     printf '%s ' "$1"; read -r REPLY || exit 0
 }
 
-list_profiles() {   # lines: name<TAB>model<TAB>number formats<TAB>aliases
+list_profiles() {   # lines: name<TAB>model<TAB>number of formats<TAB>aliases
     if [ "$HAS_PROFILES" = 1 ]; then "$MTKLOGO" profiles
-    else   # fallback without the subcommand: reads the names directly from the YAML
+    else   # fallback without the subcommand: read the names straight from the yaml
         local y; for y in "$HOME/.config/mtklogo.yaml" /etc/mtklogo.yaml ./mtklogo.yaml; do [ -f "$y" ] && break; done
         sed -nE 's/^[[:space:]]*-[[:space:]]+name:[[:space:]]*([^[:space:]#]+).*/\1\t?\t?\t/p' "$y"
     fi
 }
 
-choose_profile() {  # Choose a profile -> $PROFILE (empty if cancelled)
-    local -a names labels; local n cm cnt al
+choose_profile() {  # pick a profile -> $PROFILE (empty if cancelled)
+    local -a names labels; local n cm cnt al i
     while IFS=$'\t' read -r n cm cnt al; do
-        names+=("$n"); labels+=("$n  [$cm, $cnt formats${al:+, alias: $al}]")
+        names+=("$n"); labels+=("$n  [$cm, $cnt $W_FORMATS${al:+, $W_ALIAS: $al}]")
     done < <(list_profiles)
-    [ ${#names[@]} -eq 0 ] && { err "No profiles found in mtklogo.yaml"; PROFILE=""; return 1; }
-    echo; echo "  What is the resolution profile of your device?"
-    local i
-    select _ in "${labels[@]}" "Cancel"; do
+    [ ${#names[@]} -eq 0 ] && { err "$M_NO_PROFILES"; PROFILE=""; return 1; }
+    echo; echo "  $M_WHICH"
+    select _ in "${labels[@]}" "$M_CANCEL"; do
         [ -z "${REPLY:-}" ] && continue
         if [ "$REPLY" -eq $(( ${#names[@]} + 1 )) ] 2>/dev/null; then PROFILE=""; return 1; fi
         i=$(( REPLY - 1 ))
         if [ "$i" -ge 0 ] && [ "$i" -lt ${#names[@]} ]; then PROFILE="${names[$i]}"; return 0; fi
-        echo "  Invalid option."
+        echo "  $M_INVALID_OPT"
     done
     PROFILE=""; return 1
 }
 
 need_logo_bin() {
     [ -f "$LOGO_BIN" ] && return 0
-    banner "$LOGO_BIN not found in $PWD" "Put your logo.bin file in this folder."
+    banner "$(fmt "$M_NO_LOGO" "$LOGO_BIN" "$PWD")" "$M_PUT_LOGO"
     return 1
 }
 
-make_backup() {   # cópia única do logo.bin original
+make_backup() {   # single copy of the original logo.bin
     mkdir -p "$BACKUP_DIR"
     if [ ! -e "$BACKUP_DIR/$(basename "$LOGO_BIN").orig" ]; then
         cp -p -- "$LOGO_BIN" "$BACKUP_DIR/$(basename "$LOGO_BIN").orig" &&
-            echo "Backup of the original file: $BACKUP_DIR/$(basename "$LOGO_BIN").orig"
+            say "$M_BACKUP" "$BACKUP_DIR/$(basename "$LOGO_BIN").orig"
     fi
 }
 
-clean_dir() {     # Empty one of the workbooks (fixed names, never arbitrary paths).
+clean_dir() {     # empties one of the work folders (fixed names, never arbitrary paths)
     local d="$1"
-    case "$d" in "$UNPACK_DIR"|"$EXPLORE_DIR") ;; *) err "folder not allowed: $d"; return 1;; esac
+    case "$d" in "$UNPACK_DIR"|"$EXPLORE_DIR") ;; *) err "$(fmt "$M_DIR_BAD" "$d")"; return 1;; esac
     if [ -d "$d" ] && [ -n "$(ls -A -- "$d" 2>/dev/null)" ]; then
-        confirm "The folder $d/ already contains files. Delete the contents and continue?" || return 1
+        confirm "$(fmt "$M_DIR_ASK" "$d")" || return 1
         find "$d" -mindepth 1 -delete
     fi
     mkdir -p "$d"
@@ -114,29 +140,28 @@ clean_dir() {     # Empty one of the workbooks (fixed names, never arbitrary pat
 # ---- actions -------------------------------------------------------------------
 do_unpack() {
     need_logo_bin || return
-    choose_profile || { echo "Cancelled."; return; }
-    clean_dir "$UNPACK_DIR" || { echo "Cancelled."; return; }
+    choose_profile || { echo "$M_CANCELLED"; return; }
+    clean_dir "$UNPACK_DIR" || { echo "$M_CANCELLED"; return; }
     make_backup
-    echo "Selected profile: $PROFILE"
+    say "$M_PROFILE_SEL" "$PROFILE"
     "$MTKLOGO" unpack -p "$PROFILE" "$LOGO_BIN" -o "$UNPACK_DIR" 2>&1 | strip_ansi | grep -v '░' | grep -v '^$'
-    local rc=${PIPESTATUS[0]}
+    local rc=${PIPESTATUS[0]} raw png
     echo "$PROFILE" > "$STATE_FILE"
-    local raw png
     shopt -s nullglob
     local -a _z=("$UNPACK_DIR"/*raw.z) _p=("$UNPACK_DIR"/*.png)
     shopt -u nullglob
     raw=${#_z[@]}; png=${#_p[@]}
-    if [ "$rc" -ne 0 ]; then err "the unpacking ended with code. $rc"; return; fi
-    banner "Unpack completed (profile $PROFILE)" "$png PNG images in $UNPACK_DIR/" "$raw slots maintained as .z (unrecognized resolution-dimension)"
-    [ "$raw" -gt 0 ] && warn "slots .z files are preserved in the repack; to view them as an image, add the dimension to the profile in mtklogo.yaml."
+    if [ "$rc" -ne 0 ]; then err "$(fmt "$M_UNPACK_RC" "$rc")"; return; fi
+    banner "$(fmt "$M_UNPACK_T" "$PROFILE")" "$(fmt "$M_UNPACK_PNG" "$png" "$UNPACK_DIR")" "$(fmt "$M_UNPACK_RAW" "$raw")"
+    [ "$raw" -gt 0 ] && warn "$M_RAW_HINT"
 }
 
 do_detect() {
     need_logo_bin || return
-    echo "Testing all profiles (read-only, nothing is extracted)..."
+    echo "$M_DET_START"
     local n cm cnt al out ok total best="" bestok=-1 tmp bin lbin
     local -a rows
-    # The -n mode saves a .mtklogo-meta file in the current folder; it runs in a temporary folder
+    # -n writes a .mtklogo-meta into the current folder: run in a temporary one
     tmp=$(mktemp -d); bin=$(readlink -f "$MTKLOGO"); lbin=$(readlink -f "$LOGO_BIN")
     while IFS=$'\t' read -r n cm cnt al; do
         out=$(cd "$tmp" && "$bin" unpack -n -p "$n" "$lbin" 2>&1 | strip_ansi)
@@ -146,14 +171,14 @@ do_detect() {
         if [ "$ok" -gt "$bestok" ]; then bestok=$ok; best=$n; fi
     done < <(list_profiles)
     rm -rf -- "$tmp"
-    echo; echo "  Recognized slots / total   profile"
+    echo; echo "$M_DET_HDR"
     printf '%s\n' "${rows[@]}" | sort -t'|' -k1,1nr | head -8 | while IFS='|' read -r ok total n; do
         printf '        %3s / %-3s              %s\n' "$ok" "${total:-?}" "$n"; done
     echo
-    if [ "$bestok" -le 0 ]; then warn "no profile recognized slots; use 'Unpack other' (explore) to discover the width."; return; fi
-    echo "Best candidate: $best ($bestok slots)."
-    warn "profiles with the same screen but a different color model may tie; check the PNGs after unpacking."
-    if confirm "Unpack now with the profile $best?"; then
+    if [ "$bestok" -le 0 ]; then warn "$M_DET_NONE"; return; fi
+    say "$M_DET_BEST" "$best" "$bestok"
+    warn "$M_DET_TIE"
+    if confirm "$(fmt "$M_DET_ASK" "$best")"; then
         PROFILE="$best"; clean_dir "$UNPACK_DIR" || return; make_backup
         "$MTKLOGO" unpack -p "$PROFILE" "$LOGO_BIN" -o "$UNPACK_DIR" 2>&1 | strip_ansi | grep -v '░' | grep -v '^$' | tail -3
         echo "$PROFILE" > "$STATE_FILE"
@@ -164,65 +189,61 @@ do_explore() {
     need_logo_bin || return
     local w s
     while :; do
-        ask "  Device screen width in pixels (e.g., 1080), empty cancels:"; w="$REPLY"
-        [ -z "$w" ] && { echo "Cancelled."; return; }
+        ask "$M_ASK_W"; w="$REPLY"
+        [ -z "$w" ] && { echo "$M_CANCELLED"; return; }
         [[ "$w" =~ ^[0-9]+$ ]] && [ "$w" -ge 16 ] && [ "$w" -le 10000 ] && break
-        echo "  Invalid value: enter only numbers (16 to 10000)."
+        echo "$M_BAD_W"
     done
-    ask "  Slots to explore (e.g.: 0  ou  0,1  ou  0-3) [0]:"; s="${REPLY:-0}"
-    [[ "$s" =~ ^[0-9]+([,-][0-9]+)*$ ]] || { err "invalid slots: $s"; return; }
-    clean_dir "$EXPLORE_DIR" || { echo "Cancelled."; return; }
+    ask "$M_ASK_S"; s="${REPLY:-0}"
+    [[ "$s" =~ ^[0-9]+([,-][0-9]+)*$ ]] || { err "$(fmt "$M_BAD_S" "$s")"; return; }
+    clean_dir "$EXPLORE_DIR" || { echo "$M_CANCELLED"; return; }
     make_backup
     "$MTKLOGO" explore "$LOGO_BIN" --slots "$s" --width "$w" -o "$EXPLORE_DIR" 2>&1 | strip_ansi | grep -v '░' | grep -v '^$'
-    banner "Exploration complete: see the PNGs at $EXPLORE_DIR/" \
-           "Choose the PNG with the correct colors and image;" \
-           "The file suffix is ​​the color_model of your device."
-    echo "  Then use 'Unpack' with -m <model> on a $w wide profile or create a profile in yaml."
+    banner "$(fmt "$M_EXP_T" "$EXPLORE_DIR")" "$M_EXP_1" "$M_EXP_2"
+    say "$M_EXP_NEXT" "$w"
 }
 
 do_repack() {
-    local dir="${1:-$UNPACK_DIR}" prof="" out files a alpha=() ref=()
+    local dir="${1:-$UNPACK_DIR}" prof="" out files alpha=() ref=()
     [ -f "$STATE_FILE" ] && prof=$(<"$STATE_FILE")
-    [ -d "$dir" ] || { err "folder $dir/ doesn't exist: unpack it first."; return; }
+    [ -d "$dir" ] || { err "$(fmt "$M_NO_DIR" "$dir")"; return; }
     shopt -s nullglob; files=("$dir"/logo_*); shopt -u nullglob
-    [ ${#files[@]} -eq 0 ] && { err "no logo_* file in $dir/"; return; }
-    echo "  ${#files[@]} files in $dir/"
-    confirm "Remove the alpha channel (-a, assumes opaque images)?" && alpha=(--alpha)
+    [ ${#files[@]} -eq 0 ] && { err "$(fmt "$M_NO_FILES" "$dir")"; return; }
+    say "$M_N_FILES" "${#files[@]}" "$dir"
+    confirm "$M_ALPHA" && alpha=(--alpha)
     mkdir -p "$OUT_DIR"
     out="$OUT_DIR/logo_${prof:-custom}_$(date +%Y%m%d-%H%M%S).bin"
     if [ "$HAS_REFERENCE" = 1 ] && [ -f "$LOGO_BIN" ]; then ref=(--reference "$LOGO_BIN"); fi
     "$MTKLOGO" repack "${alpha[@]}" "${ref[@]}" "${files[@]}" -o "$out" 2>&1 | strip_ansi | grep -v '░' | grep -v '^$' | grep -v ' is slot [0-9]* in '
     if [ "${PIPESTATUS[0]}" -ne 0 ]; then
-        if [ "$HAS_REFERENCE" = 1 ] && confirm "Validation revealed discrepancies. Repackage anyway (--force)?"; then
+        if [ "$HAS_REFERENCE" = 1 ] && confirm "$M_FORCE"; then
             "$MTKLOGO" repack "${alpha[@]}" "${ref[@]}" --force "${files[@]}" -o "$out" 2>&1 | strip_ansi | grep -v '░' | grep -v '^$' | grep -v ' is slot [0-9]* in '
-            [ "${PIPESTATUS[0]}" -ne 0 ] && { err "repack failed"; rm -f -- "$out"; return; }
+            [ "${PIPESTATUS[0]}" -ne 0 ] && { err "$M_RP_FAIL"; rm -f -- "$out"; return; }
         else
-            err "repack not performed."; rm -f -- "$out"; return
+            err "$M_RP_NOT"; rm -f -- "$out"; return
         fi
     fi
-    banner "Repack completed: $out" "$(du -b -- "$out" | cut -f1) bytes · sha256 $(sha256sum -- "$out" | cut -c1-16)…"
-    warn "Backup the /logo partition and name it logo_Stock.bin to ensure the file is from & for your device and that you know exactly its resolution. I can't be responsible for any damage caused to your device, use all at your own risk."
+    banner "$(fmt "$M_RP_DONE" "$out")" "$(fmt "$M_RP_SIZE" "$(du -b -- "$out" | cut -f1)" "$(sha256sum -- "$out" | cut -c1-16)")"
+    warn "$M_RP_WARN"
 }
 
 do_repack_other() {
-    ask "  Folder with the logo_NNN_* files already prepared. [$UNPACK_DIR]:"
+    ask "$(fmt "$M_ASK_DIR" "$UNPACK_DIR")"
     local d="${REPLY:-$UNPACK_DIR}"
-    [ -d "$d" ] || { err "folder not found: $d"; return; }
+    [ -d "$d" ] || { err "$(fmt "$M_DIR_NF" "$d")"; return; }
     do_repack "$d"
 }
 
 do_profiles() {
-    echo; printf '  %-22s %-9s %-9s %s\n' PROFILE MODEL FORMATS ALIAS
+    echo; printf '  %-22s %-9s %-9s %s\n' "$W_PROFILE" "$W_MODEL" "$W_FORMATS_U" "$W_ALIAS_U"
     list_profiles | while IFS=$'\t' read -r n cm cnt al; do printf '  %-22s %-9s %-9s %s\n' "$n" "$cm" "$cnt" "$al"; done
 }
 
-# ---- main loop (without recursion) --------------------------------------------
-echo "Caution: experimental profiles (exp_*) have not been verified on real devices."
+# ---- main loop (no recursion) ----------------------------------------------------
+echo "$M_TIP"
 while :; do
     echo
-    select action in "Unpack logo.bin" "Detect profile (tests all)" "Repack logo.bin" \
-                      "Unpack other logo.bin (explore)" "Repack other logo.bin (other folder)" \
-                      "List profiles" "Exit"; do
+    select action in "$M_MENU_1" "$M_MENU_2" "$M_MENU_3" "$M_MENU_4" "$M_MENU_5" "$M_MENU_6" "$M_MENU_7"; do
         case "$REPLY" in
             1) do_unpack ;;
             2) do_detect ;;
@@ -230,10 +251,9 @@ while :; do
             4) do_explore ;;
             5) do_repack_other ;;
             6) do_profiles ;;
-            7) echo "Exiting..."; exit 0 ;;
-            *) echo "Invalid option."; continue ;;
+            7) echo "$M_EXITING"; exit 0 ;;
+            *) echo "$M_INVALID_OPT"; continue ;;
         esac
-        break        # exit the select menu to reprint it.
+        break        # leave select so the menu is printed again
     done || exit 0
-    [ -z "${action:-}" ] && [ -z "${REPLY:-}" ] && exit 0   # EOF
 done
