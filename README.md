@@ -3,9 +3,7 @@
 ## **New in 1.2**:
 - The GUI now follows your computer's system language, with English as the default. The new version is 1.2, in the file mtklogo-gui-1.2-x86_64.AppImage (50 MB).
 - Languages ​​included: `Brazilian Portuguese`, `English`, `German`, `Spanish`, and `French`. If you use another language, everything will be in English.
-
-#### **New in 1.1**:
-- ** Ready AppImage (`mtklogo-gui-1.2-x86_64.AppImage`), **set selector**
+- Ready AppImage (`mtklogo-gui-1.2-x86_64.AppImage`), **set selector**
 - Comparring (Original × Suggested), with button **Choose logo.bin…**, folder `suggested/` (script v2 + patched mtklogo + new yaml) and correction in prompt detection (ignores `read` from script internal pipes).
 - Details and justifications in `ANALYSIS_AND_SUGGESTIONS.md`.
 
